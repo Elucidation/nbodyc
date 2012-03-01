@@ -1,0 +1,5 @@
+# Number of bodies
+2
+# mass x y z vx vy vz
+1 -1 0 0 0 0 0
+1 1 0 0 0 0 0

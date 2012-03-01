@@ -4,7 +4,7 @@ CFLAGS=-ansi -pedantic -Wall nbody.c
 nbody: nbody.o
 
 nbody.o: nbody.c
-	$(CC) $(CFLAGS) -c nbody.c
+	$(CC) -c $(CFLAGS) 
 
 clean:
 	del nbody.exe nbody.o

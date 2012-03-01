@@ -14,7 +14,7 @@ typedef struct{
 
 
 void ppBody(FILE *fp,body_t* b) {
-	fprintf(fp,"<M:%f P(%f,%f,%f) V(%f,%f,%f)>", 
+	fprintf(fp,"<M:%f\tP(%f,%f,%f)\tV(%f,%f,%f)>", 
 		b->m,	b->x,b->y,b->z,	b->vx,b->vy,b->vz);
 }
 
@@ -128,18 +128,45 @@ void calcAccelerations(int n, body_t* data, float* accels) {
 
 }
 
+void stepForwardEuler(body_t* data, float* acc, int n, int dt) {
+	/* Calculate accelerations */
+	calcAccelerations(n,data,acc);
+
+	/* Update velocities from accelerations */
+	updateVelocities(n,data,dt,acc);
+
+	/* Update positions */
+	updatePositions(n,data,dt);
+}
+
+void leapfrog(body_t* data, float* acc, int n, int dt) {
+	/* Half-step positions */
+	updatePositions(n,data,0.5*dt);
+	
+	/* Calculate accelerations */
+	calcAccelerations(n,data,acc);
+
+	/* Update velocities from accelerations */
+	updateVelocities(n,data,dt,acc);
+
+	/* Half-step positions */
+	updatePositions(n,data,0.5*dt);
+}
+
 int main(int argc, char *argv[])
 {
 	char *input_filename;
+	char *output_filename = NULL;
 	FILE *fp = stdout;
 	int n; /* number of bodies */
 	body_t* bods = NULL; /* pointer to the head of an array of body_t's */
 	float t=0, dt,TMAX; /* time info */
 	float* acc;
+	long step=0; 
 
 	fprintf(stderr,"\n-------------------------\nN-BODY SIMULATION\n-------------------------\n");
-	if (argc != 4) {
-		fprintf(stderr,"\nUSAGE:\n\tnbody INPUT_FILE DT TIMEMAX\n");
+	if (argc < 4) {
+		fprintf(stderr,"\nUSAGE:\n\tnbody INPUT_FILE DT TIMEMAX [OUTPUT_FILE]\n");
 		return 0;
 	}
 
@@ -150,6 +177,13 @@ int main(int argc, char *argv[])
 	/* Load data from file */
 	input_filename = argv[1];
 	loadFile(input_filename, &n, &bods);
+
+	if (argc == 5) {
+		output_filename = argv[4];
+		fp = fopen(output_filename,"wt");
+		fprintf(stderr,"Writing output to file '%s'\n",output_filename);
+	}
+
 	fprintf(stderr,"\n-------------------------\nINITIAL STATE\n-------------------------\n");
 	
 	fprintf(fp,"%i %f %f\n",n,dt,TMAX);
@@ -163,20 +197,13 @@ int main(int argc, char *argv[])
 
 	while (t < TMAX) {
 		t += dt;
-		fprintf(stderr,"----TIME %g----\n",t);
+		step++;
 
-		/* Calculate accelerations */
-		calcAccelerations(n,bods,acc);
-
-		/* Update velocities from accelerations */
-		updateVelocities(n,bods,dt,acc);
-
-		/* Update positions */
-		updatePositions(n,bods,dt);
+		stepForwardEuler(bods,acc,n,dt);
 
 		/* print info to file or error or whatever */
-		writeBodies(fp,n,bods);
-		
+		fprintf(stderr,"STEP %ld\t\tSim-time %g\n",step,t);
+		writeBodies(fp,n,bods);		
 	}
 
 	fprintf(stderr,"\n-------------------------\nEND OF SIMULATION\n-------------------------\n");
@@ -186,6 +213,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr,"\n-------------------------\nEND\n");
 
 	free(bods);
+	free(acc);
 	
 	return 0;
 }

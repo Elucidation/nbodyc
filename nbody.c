@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 
 #define G 1.0 /* Gravitational Constant */
 #define ETA 0.1 /* Softening factor for close collisions */
+#define DEBUG 0
 
 typedef struct{
 	float m; /* mass */
@@ -14,7 +16,7 @@ typedef struct{
 
 
 void ppBody(FILE *fp,body_t* b) {
-	fprintf(fp,"<M:%f\tP(%f,%f,%f)\tV(%f,%f,%f)>", 
+	fprintf(fp,"<M:%f\tP(%f,%f,%f)\t\tV(%f,%f,%f)>", 
 		b->m,	b->x,b->y,b->z,	b->vx,b->vy,b->vz);
 }
 
@@ -142,7 +144,7 @@ void stepForwardEuler(body_t* data, float* acc, int n, int dt) {
 void leapfrog(body_t* data, float* acc, int n, int dt) {
 	/* Half-step positions */
 	updatePositions(n,data,0.5*dt);
-	
+
 	/* Calculate accelerations */
 	calcAccelerations(n,data,acc);
 
@@ -155,6 +157,8 @@ void leapfrog(body_t* data, float* acc, int n, int dt) {
 
 int main(int argc, char *argv[])
 {
+	clock_t t_start,t_init,t_exec;
+	double t_all,t_load,t_run;
 	char *input_filename;
 	char *output_filename = NULL;
 	FILE *fp = stdout;
@@ -164,6 +168,7 @@ int main(int argc, char *argv[])
 	float* acc;
 	long step=0; 
 
+	t_start = clock();
 	fprintf(stderr,"\n-------------------------\nN-BODY SIMULATION\n-------------------------\n");
 	if (argc < 4) {
 		fprintf(stderr,"\nUSAGE:\n\tnbody INPUT_FILE DT TIMEMAX [OUTPUT_FILE]\n");
@@ -176,7 +181,10 @@ int main(int argc, char *argv[])
 
 	/* Load data from file */
 	input_filename = argv[1];
+
+	t_init = clock();
 	loadFile(input_filename, &n, &bods);
+	t_load = ( (double) (clock()-t_init) / CLOCKS_PER_SEC );
 
 	if (argc == 5) {
 		output_filename = argv[4];
@@ -184,33 +192,50 @@ int main(int argc, char *argv[])
 		fprintf(stderr,"Writing output to file '%s'\n",output_filename);
 	}
 
-	fprintf(stderr,"\n-------------------------\nINITIAL STATE\n-------------------------\n");
+	if (DEBUG) {
+		fprintf(stderr,"\n-------------------------\nINITIAL STATE\n-------------------------\n");
+		printBodies(stderr,n,bods);	
+	}
 	
 	fprintf(fp,"%i %f %f\n",n,dt,TMAX);
 	writeBodies(fp,n,bods);
-	fprintf(stderr,"----TIME %g---\n",t);
-	printBodies(stderr,n,bods);	
 	
-	fprintf(stderr,"\n-------------------------\nSTARTING SIMULATION \tDT:%g\tTMAX:%g\n-------------------------\n",dt,TMAX);
+	
+	fprintf(stderr,"\n-------------------------\nRUNNING SIMULATION \tDT:%g\tTMAX:%g\n-------------------------\n",dt,TMAX);
 	acc = (float*)malloc(3*n*sizeof(float)); /* Initialize acceleration array (3D x,y,z) */
 	assert(acc!=NULL);
 
-	while (t < TMAX) {
+	t_exec = clock();
+	while (t+0.5*dt < TMAX) { /* float-safe way to say while (t < TMAX) */
 		t += dt;
 		step++;
 
 		stepForwardEuler(bods,acc,n,dt);
 
 		/* print info to file or error or whatever */
-		fprintf(stderr,"STEP %ld\t\tSim-time %g\n",step,t);
+		if (DEBUG) {
+			fprintf(stderr,"STEP %ld\t\tSim-time %g\n",step,t);
+		}
 		writeBodies(fp,n,bods);		
 	}
+	t_run = ( (double) (clock() - t_exec) / CLOCKS_PER_SEC );
+	t_all = ( (double) (clock() - t_start) / CLOCKS_PER_SEC );
 
 	fprintf(stderr,"\n-------------------------\nEND OF SIMULATION\n-------------------------\n");
-	fprintf(stderr,"End Time : %g",t);
-	fprintf(stderr,"\n-------------------------\nFINAL STATE\n-------------------------\n");
-	printBodies(stderr,n,bods);
-	fprintf(stderr,"\n-------------------------\nEND\n");
+	fprintf(stderr,"Execution Sim-time  : %g\n",t);
+	fprintf(stderr,"Execution Real-time : %g\n", t_run);
+	fprintf(stderr,"Time Loading File : %g\n", t_load);
+	fprintf(stderr,"Total Real-time : %g\n", t_all);
+
+	if (DEBUG) {
+		fprintf(stderr,"\n-------------------------\nFINAL STATE\n-------------------------\n");
+		printBodies(stderr,n,bods);	
+	}
+	fprintf(stderr,"\n-------------------------\nEND\n-------------------------\n");
+
+	if (fp != stdout) { /* Did have an output file */
+		fclose(fp);
+	}
 
 	free(bods);
 	free(acc);

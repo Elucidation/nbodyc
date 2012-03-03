@@ -20,7 +20,7 @@ void ppBody(FILE *fp,body_t* b) {
 		b->m,	b->x,b->y,b->z,	b->vx,b->vy,b->vz);
 }
 
-void printBodies(FILE *fp, int n, body_t* data) {
+void printBodies(FILE *fp,const int n, body_t* data) {
 	int i;
 	for (i=0;i<n;i++) {
 		fprintf(fp,"B[%i]: ",i);
@@ -29,7 +29,7 @@ void printBodies(FILE *fp, int n, body_t* data) {
 	}
 }
 
-void writeBodies(FILE *fp, int n, body_t* data) {
+void writeBodies(FILE *fp,const int n, body_t* data) {
 	int i;
 	for (i=0;i<n;i++) {
 		fprintf(fp,"%f %f %f %f %f %f %f\n", data[i].m,
@@ -82,7 +82,7 @@ void loadFile(const char* filename, int *numBodies, body_t** data) {
 	fclose(fp);
 }
 
-void updatePositions(int n, body_t* data, float dt) {
+void updatePositions(const int n, body_t* data,const float dt) {
 	int i;
 	for (i=0;i<n;i++) {
 		data[i].x += data[i].vx * dt;
@@ -92,7 +92,7 @@ void updatePositions(int n, body_t* data, float dt) {
 
 }
 
-void updateVelocities(int n, body_t* data, float dt, float* acc) {
+void updateVelocities(const int n, body_t* data,const float dt, float* acc) {
 	int i;
 	for (i=0;i<n;i++) {
 		data[i].vx += acc[3*i]   * dt;
@@ -102,13 +102,11 @@ void updateVelocities(int n, body_t* data, float dt, float* acc) {
 
 }
 
-void calcAccelerations(int n, body_t* data, float* accels) {
+void calcAccelerations(const int n, body_t* data, float* accels) {
 	int i,j;
 	float dx,dy,dz,r, f;
-	for (i=0;i<n;i++) {
-		accels[3*i]=0;
-		accels[3*i+1]=0;
-		accels[3*i+2]=0;
+	for (i=0;i<3*n;i++) {
+		accels[i]=0;
 	}
 	for (i=0;i<n;i++) {
 		for (j=i+1;j<n;j++) {
@@ -118,19 +116,19 @@ void calcAccelerations(int n, body_t* data, float* accels) {
 			r = sqrt(dx*dx + dy*dy + dz*dz) + ETA;
 			f = G * data[i].m * data[j].m / (r*r*r); /* force/r */
 
-			accels[3*i]  = dx*f;
-			accels[3*i+1]= dy*f;
-			accels[3*i+2]= dz*f;
+			accels[3*i]   += dx*f;
+			accels[3*i+1] += dy*f;
+			accels[3*i+2] += dz*f;
 
-			accels[3*j]  = -dx*f;
-			accels[3*j+1]= -dy*f;
-			accels[3*j+2]= -dz*f;
+			accels[3*j]   += -dx*f;
+			accels[3*j+1] += -dy*f;
+			accels[3*j+2] += -dz*f;
 		}
 	}
 
 }
 
-void stepForwardEuler(body_t* data, float* acc, int n, int dt) {
+void stepForwardEuler(body_t* data, float* acc,const int n,const int dt) {
 	/* Calculate accelerations */
 	calcAccelerations(n,data,acc);
 
@@ -141,7 +139,7 @@ void stepForwardEuler(body_t* data, float* acc, int n, int dt) {
 	updatePositions(n,data,dt);
 }
 
-void leapfrog(body_t* data, float* acc, int n, int dt) {
+void leapfrog(body_t* data, float* acc,const int n,const int dt) {
 	/* Half-step positions */
 	updatePositions(n,data,0.5*dt);
 

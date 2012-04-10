@@ -10,4 +10,4 @@ nbody.o: nbody.c
 clean:
 	rm -rf nbody nbody.o # FOR LINUX
 	#del nbody.exe nbody.o # FOR WINDOWS
-
+	

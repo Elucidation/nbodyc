@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 		printBodies(stderr,n,bods);	
 	}
 	
-	fprintf(fp,"%i %f %f\n",n,dt,TMAX);
+	fprintf(fp,"# %i %f %f\n",n,dt,TMAX);
 	writeBodies(fp,n,bods);
 	
 	

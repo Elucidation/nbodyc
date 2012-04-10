@@ -19,3 +19,10 @@ For example
 ```
 nbody.exe twoBody.in 0.25 4 twoBod.out 
 ```
+
+To Plot
+---
+Run `gnuplot`, then type:
+```
+load 'twoBod.plot'
+```

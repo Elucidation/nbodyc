@@ -128,7 +128,7 @@ void calcAccelerations(const int n, body_t* data, float* accels) {
 
 }
 
-void stepForwardEuler(body_t* data, float* acc,const int n,const int dt) {
+void stepForwardEuler(body_t* data, float* acc,const int n,const float dt) {
 	/* Calculate accelerations */
 	calcAccelerations(n,data,acc);
 
@@ -139,7 +139,7 @@ void stepForwardEuler(body_t* data, float* acc,const int n,const int dt) {
 	updatePositions(n,data,dt);
 }
 
-void leapfrog(body_t* data, float* acc,const int n,const int dt) {
+void leapfrog(body_t* data, float* acc,const int n,const float dt) {
 	/* Half-step positions */
 	updatePositions(n,data,0.5*dt);
 
@@ -219,8 +219,8 @@ int main(int argc, char *argv[])
 	t_run = ( (double) (clock() - t_exec) / CLOCKS_PER_SEC );
 	t_all = ( (double) (clock() - t_start) / CLOCKS_PER_SEC );
 
-	fprintf(stderr,"\n-------------------------\nEND OF SIMULATION\n-------------------------\n");
-	fprintf(stderr,"Execution Sim-time  : %g\n",t);
+	fprintf(stderr,"\n-------------------------\nEND OF SIMULATION (%lu STEPS)\n-------------------------\n",step);
+	fprintf(stderr,"Ending Sim-time  : %g\n",t);
 	fprintf(stderr,"Execution Real-time : %g\n", t_run);
 	fprintf(stderr,"Time Loading File : %g\n", t_load);
 	fprintf(stderr,"Total Real-time : %g\n", t_all);
